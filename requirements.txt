@@ -12,3 +12,5 @@ pylint
 pytest
 bandit
 black
+fastapi==0.142.2
+uvicorn==0.54.0

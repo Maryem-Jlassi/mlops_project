@@ -20,7 +20,28 @@ PROJECT_FILES = ["model_pipeline.py", "main.py", "pipeline_prefect.py"]
 # ============================================================
 #  TASKS
 # ============================================================
+@task
+def start_api():
+    """Lancer l'API FastAPI avec uvicorn."""
+    subprocess.run(
+        ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"],
+        check=False,
+    )
 
+@task
+def clone_repo():
+    """Clone the remote Git repository."""
+    import os
+    import shutil
+
+    dest = "/tmp/ml_project_remote"  # nosec B108
+    if os.path.exists(dest):
+        shutil.rmtree(dest)
+
+    subprocess.run(  # nosec B603 B607
+        ["git", "clone", "git@github.com:Maryem-Jlassi/mlops_project.git", dest],
+        check=True,
+    )
 
 @task
 def install_dependencies():
@@ -88,10 +109,15 @@ def run_unit_tests():
 #  FLOWS
 # ============================================================
 
+@flow(name="ml-pipeline-api")
+def api_flow():
+    """Flow de lancement de l'API FastAPI."""
+    start_api()
 
 @flow(name="ml-pipeline-code")
 def code_flow():
-    """Flow code : dépendances + formatage + qualité + sécurité + tests."""
+    """Flow code : clone + install + format + quality + security + tests."""
+    clone_repo()  # ⬅️ PREMIÈRE étape
     install_dependencies()
     format_code()
     quality_code()
@@ -134,13 +160,15 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--flow",
-        choices=["all", "entrainement", "evaluate", "code"],
+        choices=["all", "entrainement", "evaluate", "code", "api"],
         required=True,
     )
     args = parser.parse_args()
+
     {
         "all": all_flow,
         "entrainement": train_flow,
         "evaluate": evaluate_flow,
         "code": code_flow,
+        "api": api_flow,
     }[args.flow]()
