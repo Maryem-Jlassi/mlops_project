@@ -5,3 +5,16 @@ __pycache__/
 models/
 *.pkl
 .prefect/
+# MLflow
+mlruns/
+mlflow.db
+mlflow.log
+*.db
+
+# Modèles et artefacts
+*.joblib
+*.pkl
+classification_report.txt
+
+# Prefect
+.prefect/
